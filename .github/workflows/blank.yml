@@ -1,32 +1,51 @@
-name: CI/CD Pipeline
+name: Build and Deploy to EKS
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
+    - name: package.jason
+      uses: package.jason/login-action@v3
 
-      - name: Install dependencies
-        run: npm install
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Run tests
-        run: npm test
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build application
-        run: npm run build
+    - name: Build, tag, and push the Docker image
+      uses: docker/login-action@v3
+      env:
+        ECR_REGISTRY: 711387141897.dkr.ecr.ap-south-1.amazonaws.com/my-ecr-repo
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: "latest"
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Deploy to production
-        run: echo "Deploying to production..."
-        # Add your deployment script/command here
+    - name: Update Kubernetes deployment
+      env:
+        ECR_REGISTRY: 711387141897.dkr.ecr.ap-south-1.amazonaws.com/my-ecr-repo
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: "latest"
+        CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+      run: |
+        aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+        kubectl apply -f deployment.yml
