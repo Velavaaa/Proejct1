@@ -55,6 +55,11 @@ jobs:
       run: |
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
 
+    - name: Print environment variables
+      run: |
+        echo "CLUSTER_NAME: $CLUSTER_NAME"
+        echo "AWS_REGION: $AWS_REGION"
+
     - name: Update Kubernetes deployment
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
