@@ -1,0 +1,28 @@
+name: Platform CI/CD Cluster setup
+description: Configure AWS credentials and update kubeconfig
+inputs:
+  aws-cluster-arn:
+    required: true
+    type: string
+  aws-iam-oidc-role-arn:
+    required: true
+    type: string
+  aws-region:
+    required: true
+    type: string
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.aws-iam-oidc-role-arn }}
+        role-duration-seconds: 18000  # Matching the jobs timeout 300 mins
+    - name: Update kubeconfig
+      env:
+        AWS_CLUSTER_ARN: ${{ inputs.aws-cluster-arn }}
+      shell: bash
+      run: |
+        eks_cluster_name="$(echo "${AWS_CLUSTER_ARN}" | cut -d/ -f2)"
+        aws eks update-kubeconfig --name "${eks_cluster_name}"
