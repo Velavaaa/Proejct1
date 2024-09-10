@@ -46,7 +46,6 @@ jobs:
         IMAGE_TAG: "latest"
         CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
-      run: |
-        aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+     run: |
         kubectl set image deployment/my-deployment my-container=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         kubectl apply -f deployment.yml
