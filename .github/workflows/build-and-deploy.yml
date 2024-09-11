@@ -1,3 +1,25 @@
+Skip to content
+Navigation Menu
+Velavaaa
+/
+Proejct1
+
+Type / to search
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+Settings
+Build and Deploy to EKS
+Update build-and-deploy.yml #40
+Jobs
+Run details
+Workflow file for this run
+.github/workflows/build-and-deploy.yml at bda0f33
 name: Build and Deploy to EKS
 'on':
   push:
@@ -62,3 +84,4 @@ jobs:
         run: |
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
+Update build-and-deploy.yml · Velavaaa/Proejct1@bda0f33
