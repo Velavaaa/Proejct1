@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-deployment
+  name: Nodejs
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: my-app
+      app: Nodejs
   template:
     metadata:
       labels:
-        app: my-app
+        app: Nodejs
     spec:
       containers:
-      - name: my-container
+      - name: Nodejs
         image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         ports:
         - containerPort: 8080
