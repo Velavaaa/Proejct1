@@ -1,69 +1,67 @@
 name: Build and Deploy to EKS
-
-on:
+'on':
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-
+    branches:
+      - main
 jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-      
-    - name: Install kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
-        
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install kubectl
+        run: >
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s
+          https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 
-    - name: Create package.json
-      run: |
-        echo '{
-          "name": "package.json",
-          "version": "1.0.0",
-          "scripts": {
-            "start": "node app.js",
-            "build": "webpack --mode production"
-          },
-          "dependencies": {
-            "express": "^4.17.1"
-          },
-          "devDependencies": {
-            "webpack": "^5.0.0",
-            "webpack-cli": "^4.0.0"
-          }
-        }' > package.json
-    - name: Display package.json
-      run: cat package.json
+          chmod +x kubectl
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Build Docker image
-      run: |
-        docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest .
-    - name: Push Docker image
-      run: |
-        docker push ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
-
-    - name: Update kubeconfig
-      run: |
-        aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
-
-    - name: Deploy to EKS
-      run: |
-        kubectl apply -f deployment.yaml
-        kubectl apply -f service.yaml
+          sudo mv kubectl /usr/local/bin/
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: '${{ secrets.AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+          aws-region: '${{ secrets.AWS_REGION }}'
+      - name: Create package.json
+        run: |
+          echo '{
+            "name": "package.json",
+            "version": "1.0.0",
+            "scripts": {
+              "start": "node app.js",
+              "build": "webpack --mode production"
+            },
+            "dependencies": {
+              "express": "^4.17.1"
+            },
+            "devDependencies": {
+              "webpack": "^5.0.0",
+              "webpack-cli": "^4.0.0"
+            }
+          }' > package.json
+      - name: Display package.json
+        run: cat package.json
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build Docker image
+        run: >
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{
+          secrets.ECR_REPOSITORY }}:latest .
+      - name: Push Docker image
+        run: >
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{
+          secrets.ECR_REPOSITORY }}:latest
+      - name: Update kubeconfig
+        run: >
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+          --region ${{ secrets.AWS_REGION }}
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
