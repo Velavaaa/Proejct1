@@ -17,9 +17,9 @@ jobs:
       
     - name: Install kubectl
       run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
         
 
     - name: Configure AWS credentials
@@ -46,7 +46,6 @@ jobs:
             "webpack-cli": "^4.0.0"
           }
         }' > package.json
-
     - name: Display package.json
       run: cat package.json
 
@@ -57,24 +56,14 @@ jobs:
     - name: Build Docker image
       run: |
         docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest .
-
     - name: Push Docker image
       run: |
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
 
-    - name: Print environment variables
-      run: |
-        echo "CLUSTER_NAME: $CLUSTER_NAME"
-        echo "AWS_REGION: $AWS_REGION"
-
     - name: Update kubeconfig
-      env:
-        CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-     
-    - name: Update kube config
-      run: aws eks update-kubeconfig --name Nodejs
-    
+      run: |
+        aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+
     - name: Deploy to EKS
       run: |
         kubectl apply -f deployment.yaml
