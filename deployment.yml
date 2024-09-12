@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: Nodejs
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: Nodejs
@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
       - name: Nodejs
-        image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        image: 711387141897.dkr.ecr.ap-south-1.amazonaws.com/my-ecr-repo:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
