@@ -1,0 +1,77 @@
+name: Build, Scan, and Deploy to EKS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-scan-deploy:
+    name: Build, Scan, and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v2.0
+        with:
+          version: v1.24.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create package.json
+        run: |
+          echo '{
+            "name": "package.json",
+            "version": "1.0.0",
+            "scripts": {
+              "start": "node app.js",
+              "build": "webpack --mode production"
+            },
+            "dependencies": {
+              "express": "^4.17.1"
+            },
+            "devDependencies": {
+              "webpack": "^5.0.0",
+              "webpack-cli": "^4.0.0"
+            }
+          }' > package.json
+
+      - name: Display package.json
+        run: cat package.json
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest .
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name Nodejs --region ap-south-1 --role-arn arn:aws:iam::711387141897:role/EKSClusterAdminRole
+
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
