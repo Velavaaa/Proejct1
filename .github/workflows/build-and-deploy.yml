@@ -23,8 +23,7 @@ jobs:
           aws-access-key-id: '${{ secrets.AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
           aws-region: '${{ secrets.AWS_REGION }}'
-          role-to-assume: arn:aws:iam::711387141897:role/EKSClusterAdminRole
-          role-session-name: GitHubActionsRoleSession
+          
       - name: Create package.json
         run: |
           echo '{
